@@ -1,4 +1,3 @@
-[![Downloads][downloads-shield]][downloads-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![Donate][donate-shield]][donate-url]
@@ -63,7 +62,5 @@ You can support me through [**Cafecito**](https://cafecito.app/alefranzoni) (ðŸ‡
 [stars-url]: https://github.com/alefranzoni/inscraper/stargazers
 [issues-shield]: https://img.shields.io/github/issues/alefranzoni/inscraper
 [issues-url]: https://github.com/alefranzoni/inscraper/issues
-[downloads-shield]: https://img.shields.io/github/downloads/alefranzoni/inscraper/total
-[downloads-url]: https://github.com/alefranzoni/inscraper/releases
 [donate-shield]: https://img.shields.io/badge/$-donate-ff69b4.svg?maxAge=2592000&amp;style=flat
 [donate-url]: https://github.com/alefranzoni/inscraper#donate
