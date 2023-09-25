@@ -3,7 +3,7 @@
 [![Donate][donate-shield]][donate-url]
 
 # Inscraper
-This tool can be used to login to Instagram, scrape the followers and followings and get the not-following-you list. **Inscraper** uses Python and Playwright to achieve this.
+This tool can be used to login to Instagram, scrape the followers and followings and get information like the not-following-you list and more. **Inscraper** uses Python and Playwright to achieve this.
 
 ## Contents
 - [Requirements](#requirements)
