@@ -87,7 +87,7 @@ class Scraper(object):
     def _get_link(self, group):
         """Get the link to the followers or following list."""
 
-        print("👥 Openening {} list".format(group))
+        print("👥 Opening {} list".format(group))
 
         if group == "followers":
             return FOLLOWERS_URL.format(self.target)
