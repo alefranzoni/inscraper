@@ -3,7 +3,7 @@
 [![Donate][donate-shield]][donate-url]
 
 # Inscraper
-**Inscraper** is a simple Instagram web scraper built with Python and Playwright. It's able to log in, scrape the followers and followings and get information like who does not follow you and more. 
+**Inscraper** is a simple Instagram web scraper built with Python and [Playwright](https://github.com/microsoft/playwright). It's able to log in, scrape the followers and followings and get information like who does not follow you and more. 
 
 ## Contents
 - [Requirements](#requirements)
