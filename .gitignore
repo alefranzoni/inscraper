@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Inscraper reports
+reports/
+
 # C extensions
 *.so
 
