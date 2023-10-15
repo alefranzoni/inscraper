@@ -32,23 +32,36 @@ playwright install
 ```
 
 ## Usage
-After installing the dependencies, you'll to edit the `inscraper.py` file putting your Instagram credentials
-
-```py
-username = "<your_username>"
-password = "<your_password>"
-```
-
-Now, go to the project directory and run the `inscraper.py` with Python3
+After installing the dependencies, go to the project directory and run the `inscraper.py` with Python3
 
 ```bash
 cd inscraper
-python3 inscraper.py
+python3 inscraper.py [-al] [-sd SCROLL_DELAY] [-sr SCROLL_RETRIES]
 ```
 
-#### Considerations
+| Command     | Type  | Description                                                         |
+|-------------|-------|---------------------------------------------------------------------|
+|`-al`        |Boolean|Ask for user credentials, ignoring the default ones. Default: False  |
+|`-sd`        |Float  |Adds a delay (in seconds) to the scrolling process. Default: 0.5     |
+|`-sr`        |Int    |Adds attempts to the scrolling process. Default: 5                   |
+
+> Note that the delay or retries options are similar and **do not** replace the default values, but are added to them. In slow connections, we can increase one or both of these values. Remember that setting very high values for either of these two options will cause the required processing times to be longer.
+
+### Considerations
+- If you run `inscraper.py` without passing it any arguments, remember that you'll need to edit the credentials within the file in order to successful login.
 - If your account has two-factor auth protection enabled, you'll be asked to input the code.
 - The full report generated with your data will be stored in the `reports` folder. 
+
+### Examples
+```bash
+# Without passing it any args
+python3 inscraper.py
+# Just asking for credentials to login
+python3 inscraper.py -al
+# Passing it all the args
+python3 inscraper.py -al -sd 0.3 -sd 1
+
+```
 
 ## Disclaimer
 This tool will not jeopardize your account at all, but you should know that if you use it too many times in a short period of time, Instagram will proceed to perform a "soft block" of the list of followers of your account and, therefore, you will not be able to view it. 

@@ -32,7 +32,7 @@ class ArgumentManager(object):
 
         group = parser.add_argument_group('scrolling options')
         group.add_argument("-sd", "--scroll-delay", type=float, help="add a delay (in seconds) to the scrolling process. Default is 0.5")
-        group.add_argument("-sr", "--scroll-retries", type=int, help="add retry attempts to the scrolling process. Default is 5")
+        group.add_argument("-sr", "--scroll-retries", type=int, help="add attempts to the scrolling process. Default is 5")
         
         return parser.parse_args()
 
