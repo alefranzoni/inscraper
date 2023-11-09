@@ -21,7 +21,7 @@ Finally, as the list of followers/following cannot be opened or viewed anonymous
 Download this project manually or clone the repo with git
 
 ```bash
-git clone git@github.com:alefranzoni/inscraper.git
+git clone https://github.com/alefranzoni/inscraper.git
 ```
 
 Then install the required dependencies
