@@ -8,12 +8,18 @@
 ## Contents
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [First time: What do I need to know?](#first-time-what-do-i-need-to-know)
+  - [How do we generate a new security key?](#how-do-we-generate-a-new-security-key)
+  - [Considerations](#considerations)
 - [Usage](#usage)
+  - [Options](#options)
+  - [Running considerations](#running-considerations)
+  - [Examples](#examples)
 - [Disclaimer](#disclaimer)
 - [Donate](#donate)
 
 ## Requirements
-As mentioned above, this tool uses Python and Playwright to do its job. Therefore, you need to have `Python3` and `PIP` installed.  Additionally, you will also need to have `Playwright` installed.
+As mentioned above, this tool uses Python and Playwright to do its job. Therefore, you need to have `Python3` ([How to install](https://www.python.org/downloads/)) and `PIP` installed.  Additionally, you will also need to have `Playwright` installed.
 
 Finally, as the list of followers/following cannot be opened or viewed anonymously, i.e. without being logged in to Instagram, you will need to have valid credentials to log in.
 
@@ -27,27 +33,49 @@ git clone https://github.com/alefranzoni/inscraper.git
 Then install the required dependencies
 
 ```bash
+# playwright
 pip install playwright
 playwright install
+# cryptography
+pip install cryptography
 ```
 
-## Usage
-After installing the dependencies, go to the project directory and run the `inscraper.py` with Python3
+## First time: What do I need to know?
+As the tool stores cookies locally to save session data, thus avoiding having to log in to your account at each run, it is imperative that this data is protected from prying eyes. To achieve this, the data is encrypted with a unique, personal key. We only need to generate it for the **first and only time** and then save it, either in the default directory or in a secure location.
+
+### How do we generate a new security key?
+To generate a new security key, it is as simple as running the script with the desired options and including the `-gk` argument. This will automatically generate your personal key and store it in the `./data` folder.
 
 ```bash
-cd inscraper
-python3 inscraper.py [-al] [-sd SCROLL_DELAY] [-sr SCROLL_RETRIES]
+# example - generate new passkey
+python3 inscraper.py -gk
 ```
 
-| Command     | Type  | Description                                                         |
-|-------------|-------|---------------------------------------------------------------------|
-|`-al`        |Boolean|Ask for user credentials, ignoring the default ones. Default: False  |
-|`-sd`        |Float  |Adds a delay (in seconds) to the scrolling process. Default: 0.5     |
-|`-sr`        |Int    |Adds attempts to the scrolling process. Default: 5                   |
+### Considerations
+- If we move the security key to another place, before each execution we must place it in the `./data` folder.
+- If we lose the key, we can always generate a new one, but the session data previously protected with the old key will be lost.
+
+## Usage
+After installing the dependencies and generating the security key, go to the project directory and run the `inscraper.py` with Python3
+ 
+```bash
+cd inscraper
+python3 inscraper.py [OPTIONS]
+```
+### Options
+You can also customize the script execution by adding any (or all) of the following available commands.
+
+| Command     | Type  | Mandatory | Description                                                         |
+|-------------|-------|-----------|---------------------------------------------------------------------|
+|`-al`        |Boolean| -         |Ask for user credentials, ignoring the default ones. Default: False  |
+|`-sd`        |Float  | -         |Adds a delay (in seconds) to the scrolling process. Default: 0.5     |
+|`-sr`        |Int    | -         |Adds attempts to the scrolling process. Default: 5                   |
+|`-gk`        |Boolean| -         |Generate a new passkey to protect PII data                           |
+|`-h`         | -     | -         |Show the help message                                                |
 
 > Note that the delay or retries options are similar and **do not** replace the default values, but are added to them. In slow connections, we can increase one or both of these values. Remember that setting very high values for either of these two options will cause the required processing times to be longer.
 
-### Considerations
+### Running considerations
 - If you run `inscraper.py` without passing it any arguments, remember that you'll need to edit the credentials within the file in order to successful login.
 - If your account has two-factor auth protection enabled, you'll be asked to input the code.
 - The full report generated with your data will be stored in the `reports` folder. 

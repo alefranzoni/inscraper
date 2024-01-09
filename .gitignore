@@ -5,6 +5,7 @@ __pycache__/
 
 # Inscraper reports
 reports/
+data/
 
 # C extensions
 *.so
