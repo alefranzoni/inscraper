@@ -101,6 +101,7 @@ class Scraper():
         """Gets the list of followers/followings and calculate the metrics."""
         if not self._check_time_restriction():
             print(FORBIDDEN_EXECUTION)
+            print(f"🕒 Last update was on {self.last_update.strftime('%Y-%m-%d %H:%M')}")
             return
         print("⏳ Getting followers/followings, this may take a while...")
         cookies_list = get_cookies()
@@ -135,6 +136,7 @@ class Scraper():
             date_format = "%Y-%m-%d %H:%M:%S.%f"
             last_update = datetime.strptime(last_update, date_format)
             diff = (datetime.now() - last_update).total_seconds() / 60
+            self.last_update = last_update
             return diff >= 60
         return True
 
@@ -174,18 +176,6 @@ class Scraper():
         print(f"👥 {group_name.capitalize()} fetched successfully ({len(data)})")
         return data
 
-    def _old_get_users(self):
-        """Get the list of followers and following users in that order."""
-        groups = ["followers", "following"]
-        for group in groups:
-            self._open_modal(self._get_link(group))
-            self._scroll_to_bottom(group)
-            if group == "followers":
-                followers = self._get_list()
-            else:
-                following = self._get_list()
-        return followers, following
-
     def _check_protection_auth(self):
         """Check if two factor authentication is required."""
         try:
@@ -193,38 +183,6 @@ class Scraper():
             return True
         except PlaywrightTimeoutError:
             return False
-
-    def _open_modal(self, link):
-        """Open the modal with the list of followers or following users."""
-        self._navigate(link)
-        self.page.wait_for_selector("div[class='_aano']")
-
-    def _get_link(self, group):
-        """Get the link to the followers or following list."""
-        print(f"👥 Opening {group} list")
-        if group == "followers":
-            return FOLLOWERS_URL.format(self.target)
-        if group == "following":
-            return FOLLOWING_URL.format(self.target)
-        return None
-
-    def _get_users_loaded(self):
-        """Get the number of users loaded in the modal."""
-        return self.page.evaluate('document.querySelector(\'div[class="_aano"]\').childNodes.item(0).childNodes.item(0).childElementCount')
-
-    def _scroll_to_bottom(self, group):
-        """Scroll the modal to the bottom."""
-        scroll_tries = 0
-        while scroll_tries < self.scroll_retries:
-            users_loaded = self._get_users_loaded()
-            self._scroll()
-            new_users_loaded = self._get_users_loaded()
-            print(f"\r⏳ Wait, getting {group}... {new_users_loaded} users loaded", end="", flush=True)
-            if users_loaded == new_users_loaded:
-                scroll_tries += 1
-            else:
-                scroll_tries = 0
-        print(f"\r⏳ Wait, getting {group}... {new_users_loaded} users loaded")
 
     def _get_scroll_retries(self, default=6):
         """
@@ -235,11 +193,6 @@ class Scraper():
             default += self.args.get(ArgumentOptions.SCROLL_RETRIES)
         return default
 
-    def _scroll(self):
-        """Scroll the modal by setting the scroll-top position to max."""
-        self.page.evaluate('document.querySelector(\'div[class="_aano"]\').scrollTop = document.querySelector(\'div[class="_aano"]\').scrollTopMax')
-        time.sleep(self.scroll_delay)
-
     def _get_scroll_delay(self, default=0.5):
         """
         Get the delay time for scrolling the modal. The default delay time is 0.5 seconds.
@@ -248,10 +201,3 @@ class Scraper():
         if not self.args.get(ArgumentOptions.SCROLL_DELAY) is None:
             default += self.args.get(ArgumentOptions.SCROLL_DELAY)
         return default
-
-    def _get_list(self):
-        """Get the list of followers or following users from HTML content."""
-        pattern = r'href="/([^/"]*?)/" role="link"'
-        html_content = self.page.content()
-        users = re.findall(pattern, html_content)
-        return [value for value in list(set(users)) if value not in ["reels", "explore", self.target]]
