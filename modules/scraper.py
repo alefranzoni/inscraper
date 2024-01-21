@@ -9,8 +9,8 @@ import time
 from datetime import datetime
 import requests
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
-from modules.argument_manager import ArgumentManager, ArgumentOptions
-from modules.file_utils import get_metrics, save_metrics
+from modules.argument_manager import ArgumentManager
+from modules.file_utils import get_data_from_local, save_metrics
 from modules.session_utils import add_cookies, get_cookies, save_cookies
 
 BASE_URL = "https://www.instagram.com/"
@@ -35,8 +35,6 @@ class Scraper():
         print("🚀 The environment is getting ready...")
         self.headless = headless
         self.args = arguments
-        self.scroll_retries = self._get_scroll_retries()
-        self.scroll_delay = self._get_scroll_delay()
         self.browser = sync_playwright().start()
 
     def close(self):
@@ -130,7 +128,7 @@ class Scraper():
 
     def _check_time_restriction(self):
         """Checks if the required time (1 hour) has elapsed since the last data was collected."""
-        metrics = get_metrics(self.target)
+        metrics = get_data_from_local(self.target)
         if metrics:
             last_update = metrics[0]['last_update']
             date_format = "%Y-%m-%d %H:%M:%S.%f"
@@ -183,21 +181,3 @@ class Scraper():
             return True
         except PlaywrightTimeoutError:
             return False
-
-    def _get_scroll_retries(self, default=6):
-        """
-        Get the number of retries for scrolling the modal. The default number of retries is 6.
-        If the SCROLL_RETRIES argument is provided, it will be added to the default number of retries.
-        """
-        if not self.args.get(ArgumentOptions.SCROLL_RETRIES) is None:
-            default += self.args.get(ArgumentOptions.SCROLL_RETRIES)
-        return default
-
-    def _get_scroll_delay(self, default=0.5):
-        """
-        Get the delay time for scrolling the modal. The default delay time is 0.5 seconds.
-        If the SCROLL_DELAY argument is provided, it will be added to the default delay time.
-        """
-        if not self.args.get(ArgumentOptions.SCROLL_DELAY) is None:
-            default += self.args.get(ArgumentOptions.SCROLL_DELAY)
-        return default

@@ -1,5 +1,6 @@
 from getpass import getpass
 from modules.argument_manager import ArgumentManager, ArgumentOptions
+from modules.file_utils import handle_show_report
 from modules.scraper import Scraper
 from modules.session_utils import handle_security_key
 
@@ -11,6 +12,7 @@ def main():
     global password
 
     args = ArgumentManager()
+    handle_show_report(user=args.get(ArgumentOptions.SHOW_REPORT))
     handle_security_key(generate_key_arg=args.get(ArgumentOptions.GENERATE_KEY))
     scraper = Scraper(arguments=args)
     credentials_needed = username == "<your_username>" or password == "<your_password>"
