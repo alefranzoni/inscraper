@@ -19,7 +19,7 @@
 - [Donate](#donate)
 
 ## Requirements
-As mentioned above, this tool uses Python and Playwright to do its job. Therefore, you need to have `Python3` ([How to install](https://www.python.org/downloads/)) and `PIP` installed.  Additionally, you will also need to have `Playwright` installed.
+As mentioned above, this tool uses Python and Playwright to do its job. Therefore, you need to have `Python3` ([How to install](https://www.python.org/downloads/)) and `PIP` installed. Additionally, you will also need to have `Playwright` installed and a few more libraries.
 
 Finally, as the list of followers/following cannot be opened or viewed anonymously, i.e. without being logged in to Instagram, you will need to have valid credentials to log in.
 
@@ -33,11 +33,11 @@ git clone https://github.com/alefranzoni/inscraper.git
 Then install the required dependencies
 
 ```bash
-# playwright
 pip install playwright
 playwright install
-# cryptography
 pip install cryptography
+pip install requests
+pip install json
 ```
 
 ## First time: What do I need to know?
@@ -65,36 +65,34 @@ python3 inscraper.py [OPTIONS]
 ### Options
 You can also customize the script execution by adding any (or all) of the following available commands.
 
-| Command     | Type  | Mandatory | Description                                                         |
-|-------------|-------|-----------|---------------------------------------------------------------------|
-|`-al`        |Boolean| -         |Ask for user credentials, ignoring the default ones. Default: False  |
-|`-sd`        |Float  | -         |Adds a delay (in seconds) to the scrolling process. Default: 0.5     |
-|`-sr`        |Int    | -         |Adds attempts to the scrolling process. Default: 5                   |
-|`-gk`        |Boolean| -         |Generate a new passkey to protect PII data                           |
-|`-h`         | -     | -         |Show the help message                                                |
+| Command     | Type  | Mandatory | Description                                                                 |
+|-------------|-------|-----------|-----------------------------------------------------------------------------|
+|`-al`        |Boolean| -         |Ask for user credentials, ignoring the script built-in ones. Default: False  |
+|`-gk`        |Boolean| -         |Generate a new passkey to protect PII data                                   |
+|`-sr`        |String | -         |Show the last report generated for a given user                              |
+|`-h`         | -     | -         |Show the help message                                                        |
 
 > Note that the delay or retries options are similar and **do not** replace the default values, but are added to them. In slow connections, we can increase one or both of these values. Remember that setting very high values for either of these two options will cause the required processing times to be longer.
 
 ### Running considerations
-- If you run `inscraper.py` without passing it any arguments, remember that you'll need to edit the credentials within the file in order to successful login.
+- If you run `inscraper.py` without passing it any arguments, remember that you'll need to **edit the credentials** within the file in order to successful login.
 - If your account has two-factor auth protection enabled, you'll be asked to input the code.
-- The full report generated with your data will be stored in the `reports` folder. 
 
 ### Examples
 ```bash
-# Without passing it any args
+# Without any args
 python3 inscraper.py
-# Just asking for credentials to login
+# Asking for credentials to login
 python3 inscraper.py -al
-# Passing it all the args
-python3 inscraper.py -al -sd 0.3 -sd 1
+# Show the last report for 'your_username'
+python3 inscraper.py -sr "your_username"
 
 ```
 
 ## Disclaimer
-This tool will not jeopardize your account at all, but you should know that if you use it too many times in a short period of time, Instagram will proceed to perform a "soft block" of the list of followers of your account and, therefore, you will not be able to view it. 
+It is important to note that this type of usage carries a risk of your IP or account being blocked for making too many requests in a short period of time. To avoid this type of inconvenience and to protect your account, a limit of **one query per hour** has been set. Therefore, if you use the tool correctly, the probability is very low and you will not have any problems.
 
-This blocking is always temporary, usually lasting from a few hours to a maximum of 24 hours. If you use this tool correctly, there will be no problem with your account, but use it at **your own risk**.
+Anyway, always remember to use it at **your own risk**. The creator of this script is not responsible for any losses or problems resulting from its use.
 
 ## Donate
 You can support me through [**Cafecito**](https://cafecito.app/alefranzoni) (🇦🇷) or [**PayPal**](https://www.paypal.com/donate/?hosted_button_id=9LR86UDHEKM3Q) (Worldwide). Thank you ❤️
