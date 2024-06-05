@@ -4,7 +4,6 @@ from enum import Enum
 
 class ArgumentOptions(Enum):
     """Enum class for command line argument options. Defines the available argument options."""
-    ASK_LOGIN = "al"
     SHOW_REPORT = "sr"
     GENERATE_KEY = "gk"
 
@@ -18,7 +17,6 @@ class ArgumentManager(object):
     def _parse(self):
         """Get the command line arguments passed by the user at runtime."""
         parser = argparse.ArgumentParser()
-        parser.add_argument("-al", action="store_true", default=False, help="ask for login credentials instead of using the script built-in credentials")
         parser.add_argument("-sr", metavar="USERNAME", type=str, help="show the last report generated for a given user")
         parser.add_argument("-gk", action="store_true", default=False, help="generate a new passkey to protect PII data")
         return parser.parse_args()
