@@ -7,10 +7,10 @@ import re
 import sys
 import time
 import requests
+from requests.exceptions import RequestException, ConnectionError, HTTPError, Timeout, TooManyRedirects
 from datetime import datetime
 from getpass import getpass
 from requests.exceptions import Timeout as RequestTimeout
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from modules.argument_manager import ArgumentManager
 from modules.file_utils import get_data_from_local, save_metrics
 from modules.session_utils import add_cookies, get_cookies, save_cookies
@@ -34,51 +34,48 @@ class Scraper():
     list from a specific user given.
     """
 
-    def __init__(self, headless=True, arguments:ArgumentManager=None):
+    def __init__(self, arguments:ArgumentManager=None):
         """Initialize the Scraper object."""
         print("🚀 The environment is getting ready...")
 
-        self.headless = headless
         self.args = arguments
-        self.browser = sync_playwright().start()
-        self.browser = self.browser.firefox.launch(headless=self.headless)
-        self.context = self.browser.new_context()
-        self.page = self.context.new_page()
         self.target = None
         self.followers = None
         self.followings = None
         self.two_factor_required = None
+        self.session = requests.session()
 
-        add_cookies(context=self.context)
-
-        print("🌎 Browsing to the Instagram page")
-        self._navigate(BASE_URL)
+        # FIXME: Al tener ya la data de los cookies, colocarsela a la sesion
+        # add_cookies(context=self.context)
+        # cookies_list = get_cookies()
+        # cookies_dict = {cookie['name']: cookie['value'] for cookie in cookies_list}
+        # self.session.cookies.update(cookies_dict)
 
     def close(self):
         """Close the browser."""
-        self.browser.close()
+        self.session.close()
 
     def authenticate(self):
         """Authenticate on Instagram by logging into your account."""
-        logged_in = self._check_user_logged()
-
-        if not logged_in:
+        if self._login_required():
             self._login()
 
         self._check_success_login()
 
-    def _check_user_logged(self):
-        """Checks if the user is already logged in."""
+    def _login_required(self):
+        """
+        Determines if login is required for the user on Instagram.
+
+        This method attempts to access a page that is typically available only to users
+        who are logged in. If the response contains a redirect to the login page, it is inferred
+        that the user is not currently authenticated, and login is required.
+        """
         print("🔐 Checking login status...")
 
-        try:
-            self.page.wait_for_selector('input[name="password"]', timeout=3000)
-        except PlaywrightTimeoutError:
-            pass
+        response = self.session.get("https://www.instagram.com/accounts/edit/", timeout=5000)
+        login_required = re.search(r'instagram\.com/accounts/login/\?next', response.text)
 
-        password_selector = self.page.query_selector('input[name="password"]')
-
-        return not password_selector
+        return login_required
 
     def _login(self):
         """Performs the login.""" 
