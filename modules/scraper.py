@@ -1,249 +1,182 @@
-"""
-This module contains the implementation of a scraper for Instagram based on Playwright.
-The scraper is designed to login and get the followers/following list from a specific user given.
-"""
 import json
 import re
 import sys
-import time
-import requests
 from datetime import datetime
 from getpass import getpass
-from requests.exceptions import Timeout as RequestTimeout
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+import requests
+from requests.exceptions import RequestException
 from modules.argument_manager import ArgumentManager
+from modules.errors import AuthenticationFailException
 from modules.file_utils import get_data_from_local, save_metrics
-from modules.session_utils import add_cookies, get_cookies, save_cookies
+from modules.session_utils import load_cookies, save_cookies
 
-BASE_URL = "https://www.instagram.com/"
-FOLLOWERS_URL = BASE_URL + "{}/followers/"
-FOLLOWING_URL = BASE_URL + "{}/following/"
-AJAX_LOGIN_URL = BASE_URL + "accounts/login/ajax/"
-USER_QUERY = BASE_URL + "web/search/topsearch/?query={}"
-GRAPHQL_QUERY = BASE_URL + "graphql/query/?query_hash={}&variables={}"
+BASE_URL = "https://www.instagram.com"
+FOLLOWERS_URL = BASE_URL + "/{}/followers/"
+FOLLOWING_URL = BASE_URL + "/{}/following/"
+LOGIN_URL = BASE_URL + "/accounts/login/ajax/"
+SECURITY_LOGIN_URL = LOGIN_URL + "two_factor/"
+USER_QUERY = BASE_URL + "/web/search/topsearch/?query={}"
+GRAPHQL_QUERY = BASE_URL + "/graphql/query/?query_hash={}&variables={}"
 FOLLOWERS_QUERY_HASH = "c76146de99bb02f6415203be841dd25a"
 FOLLOWINGS_QUERY_HASH = "d04b0a864b4b54837c0d870b0e77e076"
-FAILED_LOGIN = "Check your credentials or connection and try again later"
-FAILED_SECURITY_CODE = "Check the security code and try again"
-FORBIDDEN_EXECUTION = "🚫 Execution interrupted. For safety reasons, you must wait 60 minutes before retrieving the data again"
+TIME_LIMIT = "🚫 Execution interrupted. For safety reasons, you must wait 60 minutes before retrieving the data again"
 
 class Scraper():
-    """
-    Playwright based Instagram scraper. 
-    It's able to start up a browser, authenticate to Instagram and get the followers/following 
-    list from a specific user given.
-    """
 
-    def __init__(self, headless=True, arguments:ArgumentManager=None):
-        """Initialize the Scraper object."""
+    def __init__(self, arguments:ArgumentManager=None):
         print("🚀 The environment is getting ready...")
 
-        self.headless = headless
+        self.session = requests.session()
         self.args = arguments
-        self.browser = sync_playwright().start()
-        self.browser = self.browser.firefox.launch(headless=self.headless)
-        self.context = self.browser.new_context()
-        self.page = self.context.new_page()
-        self.target = None
-        self.followers = None
-        self.followings = None
-        self.two_factor_required = None
+        self._user = None
+        self._user_id = None
+        self._password = None
+        self._payload = {}
+        self._auth_cookies = {}
+        self._auth_headers = {}
+        self._followers = []
+        self._followings = []
 
-        add_cookies(context=self.context)
-
-        print("🌎 Browsing to the Instagram page")
-        self._navigate(BASE_URL)
+        load_cookies(self.session)
 
     def close(self):
-        """Close the browser."""
-        self.browser.close()
+        self.session.close()
 
     def authenticate(self):
-        """Authenticate on Instagram by logging into your account."""
-        logged_in = self._check_user_logged()
-
-        if not logged_in:
-            self._login()
-
-        self._check_success_login()
-
-    def _check_user_logged(self):
-        """Checks if the user is already logged in."""
-        print("🔐 Checking login status...")
-
         try:
-            self.page.wait_for_selector('input[name="password"]', timeout=3000)
-        except PlaywrightTimeoutError:
-            pass
+            if self._login_required():
+                print("🔐 Account credentials is required")
+                self._login()
 
-        password_selector = self.page.query_selector('input[name="password"]')
+            if not self._user:
+                self._get_user()
+            if not self._user_id:
+                self._get_user_id()
+        except AuthenticationFailException as e:
+            self._show_error_and_exit(str(e))
 
-        return not password_selector
+    def _login_required(self):
+        print("🔐 Checking login status...")
+        return self.session.cookies.get("csrftoken") is None
 
     def _login(self):
-        """Performs the login.""" 
-        print("🔐 Account credentials is required")
-        submit_login_selector = self.page.query_selector('button[type="submit"]')
-        (username, password) = self._get_credentials()
+        self._ask_credentials()
+        self._get_login_headers()
+        if self._auth_headers:
+            self._login_execute()
+            return
+        raise AuthenticationFailException("Failed to get login headers")
 
-        self.target = username
-        self.page.fill('input[name="username"]', username)
-        self.page.fill('input[name="password"]', password)
-
-        submit_login_selector.click()
-        time.sleep(2)
-        (success, two_factor_required) = self._check_credentials(username, password)
-
-        if not success:
-            self._show_error_and_exit(FAILED_LOGIN)
-
-        if two_factor_required:
-            print("🔐 Two factor authentication is required")
-            self._wait_two_factor_url()
-            self._two_factor_resolver()
-
-        save_cookies(context=self.context)
-
-    def _get_credentials(self):
-        """Asks for and obtains the credentials entered by the user."""
+    def _ask_credentials(self):
         username = input("🔑 Enter username: ")
         print("🔑 ", end="", flush=True)
         password = getpass("Enter password: ")
-        return username, password
 
-    def _check_credentials(self, username, password):
-        """Checks if the credentials are valid."""
-        int_time = int(datetime.now().timestamp())
-        payload = {
-            'enc_password': f'#PWD_INSTAGRAM_BROWSER:0:{int_time}:{password}',
-            'optIntoOneTap': 'true',
-            'queryParams': {},
-            'username': username
-        }
-        headers = {}
+        self._user = username
+        self._password = password
 
+    def _get_login_headers(self):
         try:
-            response = requests.request("POST", AJAX_LOGIN_URL, headers=headers, data=payload, timeout=5000)
-        except RequestTimeout as e:
-            self._show_error_and_exit(str(e))
+            response = self.session.get(LOGIN_URL, timeout=10)
+        except RequestException as req_exception:
+            print(f"GET RequestException: {req_exception}")
+            return
+        else:
+            self._save_auth_headers(response.cookies.get_dict(".instagram.com"))      
 
-        csrf=response.cookies["csrftoken"]
-        mid=response.cookies["mid"]
-        ig_did=response.cookies["ig_did"]
-        ig_nrcb=response.cookies["ig_nrcb"]
-
+    def _save_auth_headers(self, cookies):
+        csrf = cookies["csrftoken"]
+        mid = cookies["mid"]
+        ig_did = cookies["ig_did"]
+        ig_nrcb = cookies["ig_nrcb"]
         headers = {
             'X-CSRFToken': f'{csrf}',
             'Cookie': f"csrftoken={csrf}; mid={mid}; ig_did={ig_did}; ig_nrcb={ig_nrcb};"
         }
+        self._auth_headers = headers
+
+    def _login_execute(self):
+        int_time = int(datetime.now().timestamp())
+        payload = {
+            'username': self._user,
+            'enc_password': f'#PWD_INSTAGRAM_BROWSER:0:{int_time}:{self._password}',
+            'queryParams': {},
+            'optIntoOneTap': 'true' 
+        }
+        self._attempt_login(LOGIN_URL, payload)
+
+    def _attempt_login(self, url, payload):
+        headers = self._auth_headers
+        response = self.session.post(url, data=payload, headers=headers, timeout=10)
 
         try:
-            response = requests.request("POST", AJAX_LOGIN_URL, headers=headers, data=payload, timeout=5000)
-        except RequestTimeout as e:
-            self._show_error_and_exit(str(e))
+            data = response.json()
+            self._parse_login(data)
+        except (json.decoder.JSONDecodeError, AttributeError):
+            raise AuthenticationFailException("Unexpected login response")
 
-        json_response = response.json()
-        two_factor_required = json_response["status"] == "fail" and json_response["error_type"] == "two_factor_required"
+    def _parse_login(self, data):
+        if data:
+            if data.get("authenticated"):
+                print("🔓 Successful login")
+                save_cookies(self.session)
+                return
+            if data.get("two_factor_required") and data.get("two_factor_info"):
+                print("🔐 Two factor authentication is required")
+                self._login_two_factor(data.get("two_factor_info").get("two_factor_identifier"))
+                return
+        raise AuthenticationFailException("Login unsuccessful")
 
-        if two_factor_required:
-            return True, True
+    def _login_two_factor(self, identifier):
+        security_code = input("🔑 Enter the security code: ")
+        payload = {
+            "username": self._user,
+            "verificationCode": security_code,
+            "identifier": identifier
+        }
+        
+        self._attempt_login(SECURITY_LOGIN_URL, payload)
 
-        return (json_response["status"] == "ok" and
-                json_response["authenticated"] is not None and
-                json_response["authenticated"] is True), False
-
-    def _wait_two_factor_url(self):
-        try:
-            self.page.wait_for_function('() => window.location.href.includes("login/two_factor")', timeout=3000)
-        except PlaywrightTimeoutError as e:
-            self._show_error_and_exit(e.message)
-
-    def _two_factor_resolver(self):
-        """Resolves the two factor auth logic to login."""
-        auth_code = input("🔑 Enter the security code: ")
-        self.page.fill('input[name="verificationCode"]', auth_code)
-        self.page.click('button[type="button"]')
-        if not self._two_factor_is_valid():
-            self._show_error_and_exit(FAILED_SECURITY_CODE)
-
-    def _two_factor_is_valid(self):
-        """Validate if the security code is valid."""
-        try:
-            self.page.wait_for_selector('p[id="twoFactorErrorAlert"]', timeout=5000)
-        except PlaywrightTimeoutError:
-            return True
-        return False
-
-    def _check_success_login(self):
-        """Checks if the user is logged in."""
-        username_match = re.search('"username":"(.*?)","is_supervised', self.page.content())
+    def _get_user(self):
+        response = self.session.get(BASE_URL, timeout=10)
+        username_match = re.search('"username":"(.*?)","is_supervised', str(response.content))
         if username_match:
-            self.target = username_match.group(1)
             print("🔓 Successful login")
-        else:
-            self._show_error_and_exit(FAILED_LOGIN)
+            self._user = username_match.group(1)
+            return
+        raise AuthenticationFailException("Could not retrieve your username from session")
 
-    def _navigate(self, url):
-        """Navigates to specified url."""
-        response = self.page.goto(url, wait_until="load")
-        self._handle_http_status(response.status)
-
-    def _handle_http_status(self, status):
-        if 200 <= status < 300:
-            pass
-        elif 400 <= status < 500:
-            self._show_error_and_exit(f"Client error ({status})")
-        elif 500 <= status < 600:
-            self._show_error_and_exit(f"Internal server error ({status})")
-        else:
-            self._show_error_and_exit(f"Unknown error ({status})")
-
-    def _show_error_and_exit(self, message):
-        print(f"😵 Oops! An error has occurred and the execution has been cancelled\n{message}")
-        self.close()
-        sys.exit()
+    def _get_user_id(self):
+        response = self.session.get(USER_QUERY.format(self._user), timeout=10)
+        try:
+            data = response.json()
+            self._user_id = data['users'][0]['user']['pk']
+        except (json.decoder.JSONDecodeError, AttributeError):
+            raise AuthenticationFailException("Unexpected user_id response")
 
     def get_groups(self):
-        """Gets the list of followers/followings."""
         self._check_time_restriction()
         print("⏳ Getting followers/followings, this may take a while...")
+        followers = self._get_group("followers")
+        followings = self._get_group("followings")
 
-        cookies_list = get_cookies()
-        cookies_dict = {cookie['name']: cookie['value'] for cookie in cookies_list}
-        user_id = self._get_user_id(cookies_dict)
-        followers = self._get_group(user_id, "followers", cookies_dict)
-        followings = self._get_group(user_id, "followings", cookies_dict)
-
-        self.followers = followers
-        self.followings = followings
+        self._followers = followers
+        self._followings = followings
 
     def _check_time_restriction(self):
-        """Checks if the required time (1 hour) has elapsed since the last data was collected."""
-        metrics = get_data_from_local(self.target)
+        metrics = get_data_from_local(self._user)
         if metrics:
             last_update = metrics[0]['last_update']
             date_format = "%Y-%m-%d %H:%M:%S.%f"
             last_update = datetime.strptime(last_update, date_format)
             diff = (datetime.now() - last_update).total_seconds() / 60
-            
-            self.last_update = last_update
-           
+
             if not diff >= 60:
-                print(FORBIDDEN_EXECUTION)
-                print(f"🕒 Last update was on {self.last_update.strftime('%Y-%m-%d %H:%M')}")
+                print(TIME_LIMIT)
+                print(f"🕒 Last update was on {last_update.strftime('%Y-%m-%d %H:%M')}")
                 sys.exit()
 
-    def _get_user_id(self, cookies):
-        """Gets the user id needed to do the requests."""
-        try:
-            user_query = requests.get(USER_QUERY.format(self.target), cookies=cookies, timeout=10000)
-        except RequestTimeout as e:
-            self._show_error_and_exit(str(e))
-
-        user_query_json = user_query.json()
-        return user_query_json['users'][0]['user']['pk']
-
-    def _get_group(self, user_id, group_name, cookies):
+    def _get_group(self, group_name):
         """Retrieves the list of the group given."""
         is_followers = group_name == "followers"
         group_query_hash = FOLLOWERS_QUERY_HASH if is_followers else FOLLOWINGS_QUERY_HASH
@@ -254,7 +187,7 @@ class Scraper():
 
         while has_next:
             variables = {
-                "id": user_id,
+                "id": self._user_id,
                 "include_reel": False,
                 "fetch_mutual": False,
                 "first": 50,
@@ -262,12 +195,8 @@ class Scraper():
             }
 
             try:
-                response = requests.get(
-                    GRAPHQL_QUERY.format(group_query_hash, json.dumps(variables)),
-                    cookies=cookies,
-                    timeout=10000
-                )
-            except RequestTimeout as e:
+                response = self.session.get(GRAPHQL_QUERY.format(group_query_hash,json.dumps(variables)), timeout=10)
+            except RequestException as e:
                 self._show_error_and_exit(str(e))
 
             response_json = response.json()
@@ -286,11 +215,10 @@ class Scraper():
         return data
 
     def show_metrics(self):
-        """Calculates and show the metrics based on the followers and followings list."""
         print("📊 Almost done! Doing some maths...")
 
-        followings = self.followings
-        followers = self.followers
+        followings = self._followings
+        followers = self._followers
         dont_follow_me_back = [following for following in followings if not any(follower['username'] == following['username'] for follower in followers)]
         dont_follow_back = [follower for follower in followers if not any(following['username'] == follower['username'] for following in followings)]
 
@@ -304,7 +232,6 @@ class Scraper():
         self._save_metrics(followers, followings, dont_follow_me_back, dont_follow_back)
 
     def _save_metrics(self, followers, followings, dont_follow_me_back, dont_follow_back):
-        """Prepares and save the user metrics locally."""
         data_to_save = []
         metrics = {
             "followings": followings,
@@ -313,4 +240,9 @@ class Scraper():
             "dont_follow_back": dont_follow_back
         }
         data_to_save.append({"metrics": metrics, "last_update": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")})
-        save_metrics(self.target, data_to_save)
+        save_metrics(self._user, data_to_save)
+
+    def _show_error_and_exit(self, message):
+        print(f"😵 Oops! An error has occurred and the execution has been cancelled\n{message}")
+        self.close()
+        sys.exit()

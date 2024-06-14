@@ -57,28 +57,21 @@ def get_cookies():
         cookies_bytes = cypher.decrypt(cookies_encrypted)
         cookies = json.loads(cookies_bytes.decode('utf-8'))
         return cookies
-    return None
+    return None  
 
-def add_cookies(context):
-    """Checks for the existence of cookies file and loads it to the browser context."""
-    if os.path.exists(COOKIES_PATH):
-        with open(COOKIES_PATH, 'r', encoding='utf-8') as f:
-            cookies_encrypted = f.read()
+def load_cookies(session):
+    """Loads the saved cookies into session."""
+    cookies = get_cookies()
+    if cookies:
+        session.cookies.update(cookies)
 
-        with open(KEY_PATH, 'rb') as file:
-            passkey = file.read()
-            cypher = Fernet(passkey)
-
-        cookies_bytes = cypher.decrypt(cookies_encrypted)
-        cookies = json.loads(cookies_bytes.decode('utf-8'))
-        context.add_cookies(cookies=cookies)
-
-def save_cookies(context):
-    """Saves the cookies from the browser context."""
+def save_cookies(session):
+    """Saves the cookies from the session."""
+    cookies = session.cookies.get_dict()
     with open(KEY_PATH, 'rb') as file:
         passkey = file.read()
         cypher = Fernet(passkey)
-    cookies_json = json.dumps(context.cookies())
+    cookies_json = json.dumps(cookies)
     cookies_bytes = cookies_json.encode('utf-8')
     cookies_encrypted = cypher.encrypt(cookies_bytes)
 
