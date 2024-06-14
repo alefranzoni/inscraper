@@ -3,3 +3,4 @@ class InscraperException(Exception):
 
 class AuthenticationFailException(InscraperException):
     pass
+    
