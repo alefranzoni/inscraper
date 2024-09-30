@@ -1,9 +1,9 @@
 import requests
 from modules.utils import print_red
 
-CURRENT = "1.0.0"
-RELEASES_API = "https://api.github.com/repos/alefranzoni/instpector/releases"
-REPO_URL = "https://github.com/alefranzoni/instpector/"
+CURRENT = "3.0.0"
+RELEASES_API = "https://api.github.com/repos/alefranzoni/inscraper/releases"
+REPO_URL = "https://github.com/alefranzoni/inscraper/"
 
 def get_latest_version():
     response = requests.get(RELEASES_API, timeout=10)

@@ -17,8 +17,8 @@ def main():
     scraper.show_metrics()
     scraper.close()
 
-    print("✅ Done, thanks for using Instpector!")
-    print("🌟 Star the project on GitHub", "\n- https://github.com/alefranzoni/instpector")
+    print("✅ Done, thanks for using Inscraper!")
+    print("🌟 Star the project on GitHub", "\n- https://github.com/alefranzoni/inscraper")
 
 if __name__ == "__main__":
     main()
