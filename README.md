@@ -2,8 +2,8 @@
 [![Issues][issues-shield]][issues-url]
 [![Donate][donate-shield]][donate-url]
 
-# Inscraper
-**Inscraper** is a simple Instagram tool built with Python that it's able to log in, obtain the followers and followings and get information like who does not follow you and more.
+# Instpector
+**Instpector** is a simple script built with Python that will help you know who has unfollowed you, among other useful metrics about your account and followers.
 
 ## Contents
 - [Requirements](#requirements)
@@ -27,7 +27,7 @@ Finally, as the list of followers/following cannot be obtained or viewed anonymo
 Download this project manually or clone the repo with git
 
 ```bash
-git clone https://github.com/alefranzoni/inscraper.git
+git clone https://github.com/alefranzoni/instpector.git
 ```
 
 Then install the required dependencies
@@ -46,7 +46,7 @@ To generate a new security key, it is as simple as running the script including 
 
 ```bash
 # example - generate new passkey
-python3 inscraper.py -gk
+python3 instpector.py -gk
 ```
 
 ### Considerations
@@ -54,11 +54,11 @@ python3 inscraper.py -gk
 - If we lose the key, we can always generate a new one, but the session data previously protected with the old key will be lost.
 
 ## Usage
-Just go to the project directory and run `inscraper.py` with Python3. Yeah, piece of cake, right?
+Just go to the project directory and run `instpector.py` with Python3. Yeah, piece of cake, right?
  
 ```bash
-cd inscraper
-python3 inscraper.py
+cd instpector
+python3 instpector.py
 ```
 ### Options
 You also are able to execute the script with some of the following options.
@@ -75,13 +75,13 @@ You also are able to execute the script with some of the following options.
 ### Examples
 ```bash
 # Simple execution
-python3 inscraper.py
+python3 instpector.py
 
 # Run the script, generating a new password key beforehand (only needed once)
-python3 inscraper.py -gk
+python3 instpector.py -gk
 
 # Show the last report for 'your_username'
-python3 inscraper.py -sr "your_username"
+python3 instpector.py -sr "your_username"
 
 ```
 
@@ -93,9 +93,9 @@ Anyway, always remember to use it at **your own risk**. The creator of this scri
 ## Donate
 You can support me through [**Cafecito**](https://cafecito.app/alefranzoni) (🇦🇷) or [**PayPal**](https://www.paypal.com/donate/?hosted_button_id=9LR86UDHEKM3Q) (Worldwide). Thank you ❤️
 
-[stars-shield]: https://img.shields.io/github/stars/alefranzoni/inscraper
-[stars-url]: https://github.com/alefranzoni/inscraper/stargazers
-[issues-shield]: https://img.shields.io/github/issues/alefranzoni/inscraper
-[issues-url]: https://github.com/alefranzoni/inscraper/issues
+[stars-shield]: https://img.shields.io/github/stars/alefranzoni/instpector
+[stars-url]: https://github.com/alefranzoni/instpector/stargazers
+[issues-shield]: https://img.shields.io/github/issues/alefranzoni/instpector
+[issues-url]: https://github.com/alefranzoni/instpector/issues
 [donate-shield]: https://img.shields.io/badge/$-donate-ff69b4.svg?maxAge=2592000&amp;style=flat
-[donate-url]: https://github.com/alefranzoni/inscraper#donate
+[donate-url]: https://github.com/alefranzoni/instpector#donate

@@ -1,6 +1,6 @@
-class InscraperException(Exception):
+class InspectorException(Exception):
     pass
 
-class AuthenticationFailException(InscraperException):
+class AuthenticationFailException(InspectorException):
     pass
     

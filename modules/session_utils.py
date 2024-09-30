@@ -17,7 +17,7 @@ def handle_security_key(generate_key_arg):
     key_exists=check_security_key_exists()
     if not key_exists and not generate_key_arg:
         print("🚨 The security key has not been found. Generate or place it inside the data folder."
-            "\n → More information at https://github.com/alefranzoni/inscraper")
+            "\n → More information at https://github.com/alefranzoni/instpector")
         sys.exit()
     elif generate_key_arg:
         if key_exists:

@@ -40,8 +40,8 @@ def handle_show_report(user):
             _print_enumerate_report(metrics['dont_follow_back'])
         else:
             print(f"🧐 No previous information has been found for {user}, so, there's nothing to show")
-        print("✅ Done, thanks for using Inscraper!")
-        print("🌟 Star the project on GitHub", "\n- https://github.com/alefranzoni/inscraper")
+        print("✅ Done, thanks for using Instpector!")
+        print("🌟 Star the project on GitHub", "\n- https://github.com/alefranzoni/instpector")
         sys.exit()
 
 def _print_enumerate_report(group):
